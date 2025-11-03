@@ -19,13 +19,11 @@ FIGURES_POS = [
     [(0, 0), (0, -1), (0, 1), (-1, 0)]  # T
 ]
 
-
 # СОСТОЯНИЯ ИГРЫ
 class GameState:
     MENU = 0
     PLAYING = 1
     GAME_OVER = 2
-
 
 # ИНИЦИАЛИЗАЦИЯ PYGAME
 pygame.init()
@@ -97,11 +95,10 @@ def download_highscore():
     try:
         with open('assets/highscore.txt', 'r') as f:
             hs = int(f.read())
+        print(f"Рекод загружен: {hs}")
         return hs
     except Exception as e:
         print(f"Ошибка при загрузке рекорда: {e}")
-
-highscore = download_highscore()
 
 def play_music(state):
     global current_music
@@ -155,7 +152,7 @@ def create_text_surfaces():
 
     title_font = main_font.render('TETRIS', True, pygame.Color('lightblue'))
     title_score = main_font.render('SCORE', True, pygame.Color('lightblue'))
-    title_highscore = font.render('RECORD', True, pygame.Color('lightblue'))
+    title_highscore = font.render('RECORD', True, pygame.Color('darkgoldenrod1'))
     next_font = font.render('NEXT', True, pygame.Color('lightgreen'))
     game_over_font = main_font.render('GAME OVER', True, pygame.Color('red'))
     play_text = font.render('PLAY', True, pygame.Color('white'))
@@ -307,7 +304,6 @@ def draw_game():
     screen.blit(title_highscore,(500,650))
     screen.blit(font.render(str(highscore), True, pygame.Color('white')),(500,710))
 
-
 def game_loop():
     """Основной игровой цикл (фиксированный размер)"""
     global a_count, a_limit, score, lines, field, figure, next_figure, color, next_color, highscore
@@ -411,8 +407,9 @@ def game_loop():
             new_highscore = max(score, highscore)
             print(score,new_highscore)
             if new_highscore > highscore:
+                highscore = new_highscore
                 try:
-                    with open('highscore.txt', 'w') as file:
+                    with open('assets/highscore.txt', 'w') as file:
                         file.write(str(new_highscore))
                         print("highscore saved")
                 except:
@@ -440,15 +437,14 @@ def game_loop():
 
     return GameState.MENU
 
-
 #ОСНОВНОЙ ЦИКЛ ПРОГРАММЫ
 def main():
-    global screen
+    global screen, highscore
 
     current_state = GameState.MENU
     init_game()
     create_text_surfaces()  #Создаем текстовые поверхности при запуске
-
+    highscore = download_highscore()
     play_music(GameState.MENU)
 
     running = True
@@ -515,7 +511,6 @@ def main():
             clock.tick(FPS)
 
     pygame.quit()
-
 
 if __name__ == "__main__":
     main()
