@@ -28,8 +28,15 @@ field = [[0 for i in range(cup_w)] for j in range(cup_h)]
 
 #animations
 a_count, a_speed, a_limit = 0, 60, 2000
+
+def get_color():
+    return (randrange(30,256), randrange(30,256), randrange(30,256))
+color, next_color = get_color(), get_color()
+
 figure, next_figure = deepcopy(choice(figures)) , deepcopy(choice(figures))
 
+score , lines = 0, 0
+scores = {0: 0, 1: 100, 2: 300, 3: 500, 4: 800}
 #оформление
 bg = pygame.image.load('assets/background.png').convert()
 game_bg = pygame.image.load('assets/game_bg.png').convert()
@@ -38,10 +45,8 @@ main_font = pygame.font.Font('assets/font.ttf', 65)
 font = pygame.font.Font('assets/font.ttf', 45)
 
 title_font = main_font.render('TETRIS', True, pygame.Color('lightblue'))
-
-def get_color():
-    return (randrange(30,256), randrange(30,256), randrange(30,256))
-color, next_color = get_color(), get_color()
+title_score = main_font.render('SCORE', True, pygame.Color('lightblue'))
+next_font = font.render('NEXT', True, pygame.Color('lightgreen'))
 
 def check_borders(fig=None):
     if fig is None:
@@ -58,7 +63,10 @@ while True:
     screen.blit(bg, (0, 0))
     screen.blit(game_screen, (20, 20))
     game_screen.blit(game_bg, (0, 0))
-
+    #задержка при удалении линии
+    for i in range(lines):
+        pygame.time.wait(200)
+    #управление
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             exit()
@@ -90,8 +98,8 @@ while True:
             for i in range(4):
                 if figure_old[i].y >= 0:  # Проверяем, что фигура в пределах поля
                     field[figure_old[i].y][figure_old[i].x] = color
-            color = get_color()
-            figure = deepcopy(choice(figures))
+            figure, color = next_figure, next_color
+            next_figure, next_color = deepcopy(choice(figures)) , get_color()
             a_limit = 2000
 
     #rotate
@@ -107,25 +115,20 @@ while True:
             figure = deepcopy(figure_old)
 
     #ряд заполнен
-    line = cup_h - 1
+    line , lines = cup_h - 1 , 0
     for row in range(cup_h - 1, -1, -1):
         count = 0
         for i in range(cup_w):
             if field[row][i]:
                 count += 1
-        if count == cup_w:
-            # Удаляем заполненную строку
-            for i in range(cup_w):
-                field[row][i] = 0
-            # Сдвигаем все строки выше вниз
-            for y in range(row, 0, -1):
-                for x in range(cup_w):
-                    field[y][x] = field[y-1][x]
-            for x in range(cup_w):
-                field[0][x] = 0
+            field[line][i] = field[row][i]
+        if count < cup_w:
+            line -=1
         else:
-            line -= 1
-
+            a_count += 3
+            lines += 1
+    #счёт
+    score += scores[lines]
     #отрисовка сетки
     [pygame.draw.rect(game_screen,(40,40,40),i_rect,1) for i_rect in grid]
 
@@ -142,8 +145,29 @@ while True:
                 figure_rect.x, figure_rect.y = x * block, y * block
                 pygame.draw.rect(game_screen,col ,figure_rect)
 
+    # отрисовка следующей фигуры
+    screen.blit(next_font, (545, 100))  # Заголовок "NEXT"
+    next_figure_rect = pygame.Rect(0, 0, block - 2, block - 2)
+    for i in range(4):
+        next_figure_rect.x = next_figure[i].x * block + 430 - block  # Центрируем по горизонтали
+        next_figure_rect.y = next_figure[i].y * block + 175  # Смещаем вниз
+        pygame.draw.rect(screen, next_color, next_figure_rect)
+
     #рендер надписей
     screen.blit(title_font, (475, 10))
+    screen.blit(title_score, (500, 780))
+    screen.blit(font.render(str(score), True, pygame.Color('white')),(500,840))
 
+    #game over
+    for i in range(cup_w):
+        if field[0][i]:
+            field = [[0 for i in range(cup_w)] for i in range(cup_h)]
+            a_count, a_speed,a_limit = 0, 60, 2000
+            score = 0
+            for i_rect in grid:
+                pygame.draw.rect(game_screen,get_color(),i_rect)
+                screen.blit(game_screen,(20,20))
+                pygame.display.flip()
+                clock.tick(200)
     pygame.display.flip()
     clock.tick(FPS)
