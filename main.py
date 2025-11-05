@@ -176,8 +176,8 @@ def init_game():
     figure_rect = pygame.Rect(0, 0, BLOCK_SIZE - 2, BLOCK_SIZE - 2)
     field = [[0 for i in range(CUP_W)] for j in range(CUP_H)]
 
-    a_count, a_speed, a_limit = 0, 60, 2000
     score, lines = 0, 0
+    a_count, a_speed, a_limit = 0, 60, 2000
 
     color, next_color = get_color(), get_color()
     figure, next_figure = deepcopy(choice(figures)), deepcopy(choice(figures))
@@ -307,9 +307,10 @@ def draw_game():
 def game_loop():
     """Основной игровой цикл (фиксированный размер)"""
     global a_count, a_limit, score, lines, field, figure, next_figure, color, next_color, highscore
-
     #Переключаем на фиксированный размер для игрового процесса
     pygame.display.set_mode(RES)  # Без pygame.RESIZABLE - фиксированный размер
+
+    now_speed = a_limit
 
     running = True
     while running:
@@ -338,7 +339,7 @@ def game_loop():
                     return GameState.MENU
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_DOWN:
-                    a_limit = 2000
+                    a_limit = now_speed
 
         #Движение по X
         figure_old = deepcopy(figure)
@@ -360,7 +361,7 @@ def game_loop():
                         field[figure_old[i].y][figure_old[i].x] = color
                 figure, color = next_figure, next_color
                 next_figure, next_color = deepcopy(choice(figures)), get_color()
-                a_limit = 2000
+                a_limit = now_speed
 
         #Вращение
         center = figure[0]
@@ -386,6 +387,8 @@ def game_loop():
                 line -= 1
             else:
                 lines += 1
+                if score // 20 >= 300:
+                    now_speed = score // 20
                 if music_loaded and lines > 0:
                     play_sound("line_clear")
                 pygame.time.delay(200)
